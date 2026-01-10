@@ -21,4 +21,8 @@ export const ICONS = {
   Check: <i className="fa-solid fa-circle-check"></i>,
   Flame: <i className="fa-solid fa-fire"></i>,
   Math: <i className="fa-solid fa-calculator"></i>,
+  User: <i className="fa-solid fa-user-circle"></i>,
+  Edit: <i className="fa-solid fa-pen-to-square"></i>,
+  QA: <i className="fa-solid fa-circle-question"></i>,
+  Lock: <i className="fa-solid fa-lock"></i>,
 };

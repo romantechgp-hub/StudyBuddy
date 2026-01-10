@@ -2,11 +2,28 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { StudyExplanation, MathSolution } from "../types";
 
-const API_KEY = process.env.API_KEY || '';
-
 export const getGeminiClient = () => {
-  return new GoogleGenAI({ apiKey: API_KEY });
+  // Always fetch the latest API_KEY from process.env when creating a new instance
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
+
+/**
+ * General Question Answer
+ */
+export async function askGeneralQuestion(question: string): Promise<string> {
+  const ai = getGeminiClient();
+  const model = 'gemini-3-flash-preview';
+
+  const response = await ai.models.generateContent({
+    model,
+    contents: `You are a helpful and friendly AI assistant for students. 
+    Answer the following question clearly and concisely in Bengali. 
+    If the question is in English, still answer primarily in Bengali with relevant English terms.
+    Question: "${question}"`,
+  });
+
+  return response.text || "দুঃখিত, আমি উত্তর খুঁজে পাইনি।";
+}
 
 /**
  * Easy Study Mode Explanation
