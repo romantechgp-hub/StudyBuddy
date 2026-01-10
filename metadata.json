@@ -1,0 +1,8 @@
+{
+  "name": "StudyBuddy Talk",
+  "description": "An interactive AI companion designed to help students understand complex topics in simple Bengali/English and practice English speaking in a friendly, stress-free environment.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
