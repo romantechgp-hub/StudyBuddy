@@ -22,7 +22,7 @@ export async function askGeneralQuestion(question: string): Promise<string> {
     Question: "${question}"`,
   });
 
-  return response.text || "à¦¦à§à¦à¦à¦¿à¦¤, à¦à¦®à¦¿ à¦à¦¤à§à¦¤à¦° à¦à§à¦à¦à§ à¦ªà¦¾à¦à¦¨à¦¿à¥¤";
+  return response.text || "Ã Â¦Â¦Ã Â§ÂÃ Â¦ÂÃ Â¦ÂÃ Â¦Â¿Ã Â¦Â¤, Ã Â¦ÂÃ Â¦Â®Ã Â¦Â¿ Ã Â¦ÂÃ Â¦Â¤Ã Â§ÂÃ Â¦Â¤Ã Â¦Â° Ã Â¦ÂÃ Â§ÂÃ Â¦ÂÃ Â¦ÂÃ Â§Â Ã Â¦ÂªÃ Â¦Â¾Ã Â¦ÂÃ Â¦Â¨Ã Â¦Â¿Ã Â¥Â¤";
 }
 
 /**
