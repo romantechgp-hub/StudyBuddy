@@ -4,7 +4,7 @@ import { StudyExplanation, MathSolution } from "../types";
 
 export const getGeminiClient = () => {
   // Always fetch the latest API_KEY from process.env when creating a new instance
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+  return new GoogleGenAI({ apiKey: process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT' });
 };
 
 /**
@@ -22,7 +22,7 @@ export async function askGeneralQuestion(question: string): Promise<string> {
     Question: "${question}"`,
   });
 
-  return response.text || "দুঃখিত, আমি উত্তর খুঁজে পাইনি।";
+  return response.text || "à¦¦à§à¦à¦à¦¿à¦¤, à¦à¦®à¦¿ à¦à¦¤à§à¦¤à¦° à¦à§à¦à¦à§ à¦ªà¦¾à¦à¦¨à¦¿à¥¤";
 }
 
 /**
