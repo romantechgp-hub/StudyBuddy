@@ -147,15 +147,19 @@ export async function translateAndGuide(text: string): Promise<{english: string,
 
   const response = await ai.models.generateContent({
     model,
-    contents: `Translate this Bengali sentence into simple natural English for speaking practice. Also provide a simple Bengali pronunciation guide.
-    Sentence: "${text}"`,
+    contents: `You are a professional language translator. 
+    Translate the following Bengali text into natural, spoken, and idiomatic English. 
+    Avoid formal or literal translations; focus on how a native speaker would say it.
+    Also, provide a clear pronunciation guide in Bengali letters.
+    
+    Bengali Input: "${text}"`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          english: { type: Type.STRING, description: "Correct natural English translation" },
-          guide: { type: Type.STRING, description: "Simple Bengali pronunciation guide" }
+          english: { type: Type.STRING, description: "Natural idiomatic English translation" },
+          guide: { type: Type.STRING, description: "Pronunciation guide in Bengali script" }
         },
         required: ["english", "guide"]
       }
@@ -163,6 +167,29 @@ export async function translateAndGuide(text: string): Promise<{english: string,
   });
 
   return JSON.parse(response.text || '{"english": "", "guide": ""}');
+}
+
+/**
+ * Generate Audio from Text (TTS)
+ */
+export async function generateSpeech(text: string): Promise<Uint8Array> {
+  const ai = getGeminiClient();
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash-preview-tts",
+    contents: [{ parts: [{ text }] }],
+    config: {
+      responseModalities: [Modality.AUDIO],
+      speechConfig: {
+        voiceConfig: {
+          prebuiltVoiceConfig: { voiceName: 'Kore' },
+        },
+      },
+    },
+  });
+  
+  const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+  if (!base64Audio) throw new Error("No audio data returned");
+  return decode(base64Audio);
 }
 
 /**
