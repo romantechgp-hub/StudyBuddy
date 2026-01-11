@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppView, UserProfile } from '../types';
 import { ICONS } from '../constants';
+import { getDailyChallenges } from '../services/geminiService';
 
 interface DashboardProps {
   setView: (view: AppView) => void;
@@ -18,17 +19,61 @@ const Dashboard: React.FC<DashboardProps> = ({ setView, streak, totalPoints, add
   const [message, setMessage] = useState('');
   const [showReward, setShowReward] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
+  const [targetSentences, setTargetSentences] = useState<string[]>([]);
+  const [isLoadingSentences, setIsLoadingSentences] = useState(true);
 
-  // Today's target sentence
-  const targetSentences = [
-    "I love learning English",
-    "StudyBuddy is my friend",
-    "I want to speak fluently"
-  ];
+  // Load daily sentences dynamically
+  useEffect(() => {
+    const loadDailyGoal = async () => {
+      setIsLoadingSentences(true);
+      const today = new Date().toDateString();
+      const savedDate = localStorage.getItem('daily_goal_date');
+      const savedSentences = localStorage.getItem('daily_goal_sentences');
+      const savedProgress = localStorage.getItem('daily_goal_progress');
+      const savedClaimed = localStorage.getItem('daily_goal_claimed');
 
-  const currentTarget = targetSentences[progress] || targetSentences[0];
+      if (savedDate === today && savedSentences) {
+        setTargetSentences(JSON.parse(savedSentences));
+        setProgress(savedProgress ? parseInt(savedProgress) : 0);
+        setRewardClaimed(savedClaimed === 'true');
+        if (savedProgress && parseInt(savedProgress) >= 3) setShowReward(true);
+        setIsLoadingSentences(false);
+      } else {
+        // Fetch new sentences for the new day
+        try {
+          const newSentences = await getDailyChallenges();
+          setTargetSentences(newSentences);
+          setProgress(0);
+          setRewardClaimed(false);
+          setShowReward(false);
+          
+          localStorage.setItem('daily_goal_date', today);
+          localStorage.setItem('daily_goal_sentences', JSON.stringify(newSentences));
+          localStorage.setItem('daily_goal_progress', '0');
+          localStorage.setItem('daily_goal_claimed', 'false');
+        } catch (error) {
+          console.error("Failed to fetch daily goal:", error);
+          setTargetSentences(["I love learning English", "Today is a great day", "I can speak English"]);
+        } finally {
+          setIsLoadingSentences(false);
+        }
+      }
+    };
+
+    loadDailyGoal();
+  }, []);
+
+  // Update progress in storage
+  useEffect(() => {
+    localStorage.setItem('daily_goal_progress', progress.toString());
+    if (progress >= 3) setShowReward(true);
+  }, [progress]);
+
+  const currentTarget = targetSentences[progress] || targetSentences[0] || "...";
 
   const handleCheckChallenge = (input: string) => {
+    if (isLoadingSentences) return;
+
     const cleanInput = input.trim().toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g,"");
     const cleanTarget = currentTarget.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g,"");
 
@@ -37,10 +82,6 @@ const Dashboard: React.FC<DashboardProps> = ({ setView, streak, totalPoints, add
       setProgress(nextProgress);
       setMessage('অসাধারণ! সঠিক হয়েছে। 🎉');
       setChallengeInput('');
-      
-      if (nextProgress >= 3) {
-        setShowReward(true);
-      }
       
       setTimeout(() => setMessage(''), 3000);
     } else {
@@ -72,6 +113,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView, streak, totalPoints, add
       addPoints(10);
       setRewardClaimed(true);
       setShowReward(false);
+      localStorage.setItem('daily_goal_claimed', 'true');
       setMessage('অভিনন্দন! ১০ পয়েন্ট যোগ হয়েছে। 💰');
       setTimeout(() => setMessage(''), 5000);
     }
@@ -113,8 +155,12 @@ const Dashboard: React.FC<DashboardProps> = ({ setView, streak, totalPoints, add
 
         {progress < 3 ? (
           <div className="space-y-4">
-            <div className="bg-white/5 border border-white/10 p-5 rounded-2xl text-center">
-              <p className="text-blue-300 font-mono text-xl font-black">"{currentTarget}"</p>
+            <div className={`bg-white/5 border border-white/10 p-5 rounded-2xl text-center transition-all ${isLoadingSentences ? 'animate-pulse' : ''}`}>
+              {isLoadingSentences ? (
+                <p className="text-blue-300 font-mono text-lg font-bold">নতুন লক্ষ্য তৈরি হচ্ছে...</p>
+              ) : (
+                <p className="text-blue-300 font-mono text-xl font-black">"{currentTarget}"</p>
+              )}
             </div>
 
             <div className="flex gap-2">
@@ -125,10 +171,12 @@ const Dashboard: React.FC<DashboardProps> = ({ setView, streak, totalPoints, add
                   onChange={(e) => setChallengeInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleCheckChallenge(challengeInput)}
                   placeholder="এখানে টাইপ করো..."
-                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 transition-all"
+                  disabled={isLoadingSentences}
+                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 transition-all disabled:opacity-50"
                 />
                 <button 
                   onClick={startVoiceInput}
+                  disabled={isLoadingSentences}
                   className={`absolute right-2 top-1.5 p-2 rounded-lg transition-all ${isListening ? 'bg-red-500 text-white animate-pulse' : 'text-blue-400 hover:bg-white/10'}`}
                 >
                   {ICONS.Mic}
@@ -136,7 +184,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setView, streak, totalPoints, add
               </div>
               <button 
                 onClick={() => handleCheckChallenge(challengeInput)}
-                className="bg-blue-600 px-5 rounded-xl font-bold text-sm hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-600/20"
+                disabled={isLoadingSentences}
+                className="bg-blue-600 px-5 rounded-xl font-bold text-sm hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50"
               >
                 চেক
               </button>
@@ -161,7 +210,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView, streak, totalPoints, add
         {!rewardClaimed ? (
           <button 
             onClick={handleClaimReward}
-            disabled={!showReward}
+            disabled={!showReward || isLoadingSentences}
             className={`w-full font-bold py-4 rounded-2xl text-sm transition-all shadow-xl ${
               showReward 
               ? 'bg-white text-slate-900 hover:bg-blue-50 active:scale-95' 
@@ -177,7 +226,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView, streak, totalPoints, add
         )}
       </section>
 
-      {/* Quick Actions - Reordered and Added new ones */}
+      {/* Quick Actions - List from user request */}
       <section className="space-y-4">
         <h3 className="font-bold text-slate-800 flex items-center justify-between px-1">
           <span>তোমার সেশন বেছে নাও</span>

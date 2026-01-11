@@ -4,8 +4,38 @@ import { StudyExplanation, MathSolution } from "../types";
 
 export const getGeminiClient = () => {
   // Always fetch the latest API_KEY from process.env when creating a new instance
-  return new GoogleGenAI({ apiKey: process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT' });
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
+
+/**
+ * Generate 3 simple daily English practice sentences
+ */
+export async function getDailyChallenges(): Promise<string[]> {
+  const ai = getGeminiClient();
+  const model = 'gemini-3-flash-preview';
+
+  const response = await ai.models.generateContent({
+    model,
+    contents: `Generate 3 very simple, common, and short English sentences for a beginner student to practice speaking. 
+    Focus on daily activities, feelings, or study-related topics. 
+    Return ONLY a JSON array of 3 strings. 
+    Example: ["I drink milk every day", "The sky is blue", "I am a good student"]`,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING }
+      }
+    }
+  });
+
+  try {
+    const sentences = JSON.parse(response.text || '[]');
+    return sentences.length === 3 ? sentences : ["I love learning English", "Today is a great day", "I can speak English"];
+  } catch (e) {
+    return ["I love learning English", "Today is a great day", "I can speak English"];
+  }
+}
 
 /**
  * General Question Answer
@@ -22,7 +52,7 @@ export async function askGeneralQuestion(question: string): Promise<string> {
     Question: "${question}"`,
   });
 
-  return response.text || "ÃÂ ÃÂ¦ÃÂ¦ÃÂ ÃÂ§ÃÂÃÂ ÃÂ¦ÃÂÃÂ ÃÂ¦ÃÂÃÂ ÃÂ¦ÃÂ¿ÃÂ ÃÂ¦ÃÂ¤, ÃÂ ÃÂ¦ÃÂÃÂ ÃÂ¦ÃÂ®ÃÂ ÃÂ¦ÃÂ¿ ÃÂ ÃÂ¦ÃÂÃÂ ÃÂ¦ÃÂ¤ÃÂ ÃÂ§ÃÂÃÂ ÃÂ¦ÃÂ¤ÃÂ ÃÂ¦ÃÂ° ÃÂ ÃÂ¦ÃÂÃÂ ÃÂ§ÃÂÃÂ ÃÂ¦ÃÂÃÂ ÃÂ¦ÃÂÃÂ ÃÂ§ÃÂ ÃÂ ÃÂ¦ÃÂªÃÂ ÃÂ¦ÃÂ¾ÃÂ ÃÂ¦ÃÂÃÂ ÃÂ¦ÃÂ¨ÃÂ ÃÂ¦ÃÂ¿ÃÂ ÃÂ¥ÃÂ¤";
+  return response.text || "দুঃখিত, আমি উত্তর খুঁজে পাইনি।";
 }
 
 /**
